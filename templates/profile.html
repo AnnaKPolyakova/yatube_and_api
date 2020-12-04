@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Профайл пользователя {{ author.get_full_name }}{% endblock %}
+{% block header %}Профайл пользователя {{ author.get_full_name }}{% endblock %}
+{% block content %}
+
+<main role="main" class="container">
+    <div class="row">
+        <div class="col-md-3 mb-3 mt-1">
+            <div class="card">
+                <div class="card-body">
+                    <div class="h2">
+                        {{ author.get_full_name }}
+                    </div>
+                    <div class="h3 text-muted">
+                        <a href="{% url 'profile' author.username %}"><strong class="d-block text-gray-dark">@{{ author.username }}</strong></a>
+                    </div>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <div class="h6 text-muted">
+                            Подписчиков: XXX <br/>
+                            Подписан: XXX
+                        </div>
+                    </li>
+                    <li class="list-group-item">
+                        <div class="h6 text-muted">
+                            Записей: {{paginator.count}}
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            {% for post in page %}<!-- Начало блока с отдельным постом -->
+                {% include "post_item.html" with post=post %}
+            {% endfor %}<!-- Конец блока с отдельным постом -->
+            <!-- Остальные посты -->
+            {% if page.has_other_pages %}
+            {% include "paginator.html" with items=page paginator=paginator%}
+            {% endif %}
+            <!-- Здесь постраничная навигация паджинатора -->
+        </div>
+    </div>
+</main>
+{% endblock %}
