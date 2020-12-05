@@ -57,22 +57,34 @@ def profile(request, username):
     })
 
 
+# def post_view(request, username, post_id):
+#     post = get_object_or_404(Post, id=post_id, author__username=username)
+#     author = post.author
+#     post_comments = post.comments.all()
+#     form = AddCommentForm(request.POST or None)
+#     if not form.is_valid():
+#         return render(request, 'post.html', {
+#             'post': post,
+#             'author': author,
+#             'form': form,
+#             'comments': post_comments,
+#         })
+#     form.instance.author = request.user
+#     form.instance.post = post
+#     form.save()
+#     return redirect('post', username, post_id)
+
 def post_view(request, username, post_id):
     post = get_object_or_404(Post, id=post_id, author__username=username)
     author = post.author
     post_comments = post.comments.all()
     form = AddCommentForm(request.POST or None)
-    if not form.is_valid():
-        return render(request, 'post.html', {
+    return render(request, 'post.html', {
             'post': post,
             'author': author,
             'form': form,
             'comments': post_comments,
         })
-    form.instance.author = request.user
-    form.instance.post = post
-    form.save()
-    return redirect('post', username, post_id)
 
 
 @login_required

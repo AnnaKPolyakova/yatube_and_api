@@ -7,6 +7,7 @@ import shutil
 import tempfile
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 
 from posts.models import Group, Post, User, Comment
 
@@ -96,13 +97,6 @@ class PostPagesTests(TestCase):
         # Создаём авторизованного клиента
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
-        self.post2 = Post.objects.create(
-            text='Test',
-            author=self.user,
-        )
-        self.POST_EDIT_URL2 = reverse('post_edit',
-                                      kwargs={'username': NAME,
-                                              'post_id': self.post2.id})
 
     def test_new_post_show_correct_context(self):
         """Шаблон new_post сформирован с правильным контекстом."""
@@ -219,6 +213,13 @@ class PostPagesTests(TestCase):
 
     def test_index_cash_is_working(self):
         # Удостоверимся, что на странице index работает cash  на вывод постов
+        self.post2 = Post.objects.create(
+            text='Test',
+            author=self.user,
+        )
+        self.POST_EDIT_URL2 = reverse('post_edit',
+                                      kwargs={'username': NAME,
+                                              'post_id': self.post2.id})
         response = self.authorized_client.get(INDEX_URL)
         form_data = {
             'text': 'Test_new_one',
@@ -237,7 +238,19 @@ class PostPagesTests(TestCase):
         text=form_data['text']
         text_code=str.encode(text, encoding='utf-8')
         response = self.authorized_client.get(INDEX_URL)
+        response2 = response.context.get('page')
         comments_count_response = response.content
         self.assertNotIn(text_code, comments_count_response)
 
-
+    def test_index_cash_is_working(self):
+        # Удостоверимся, что на странице index работает cash  на вывод постов
+        response = self.authorized_client.get(INDEX_URL)
+        self.post2 = Post.objects.create(
+            text='Test_cash',
+            author=self.user,
+        )
+        response = self.authorized_client.get(INDEX_URL)
+        text = self.post2.text
+        text_code = str.encode(text, encoding='utf-8')
+        comments_count_response = response.content
+        self.assertNotIn(text_code, comments_count_response)

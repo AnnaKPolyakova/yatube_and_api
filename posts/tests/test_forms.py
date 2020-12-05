@@ -4,6 +4,7 @@ import shutil
 import tempfile
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 
 from posts.forms import PostForm
 from posts.models import Group, Post, User
@@ -46,16 +47,30 @@ class PostCreateFormTests(TestCase):
         # Рекурсивно удаляем временную после завершения тестов
         shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=False)
 
+    @override_settings(MEDIA_ROOT=tempfile.gettempdir())
     def setUp(self):
         # Создаём неавторизованного клиента
         self.guest_client = Client()
         # Создаём авторизованного клиента
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x01\x00'
+            b'\x01\x00\x00\x00\x00\x21\xf9\x04'
+            b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
+            b'\x00\x00\x01\x00\x01\x00\x00\x02'
+            b'\x02\x4c\x01\x00\x3b'
+        )
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
         self.post = Post.objects.create(
             text='Test',
             group=self.group,
             author=self.user,
+            image=uploaded,
         )
         self.POST_URL = reverse('post', kwargs={'username': NAME,
                                                 'post_id': self.post.id})
@@ -63,6 +78,7 @@ class PostCreateFormTests(TestCase):
                                      kwargs={'username': NAME,
                                              'post_id': self.post.id})
 
+    @override_settings(MEDIA_ROOT=tempfile.gettempdir())
     def test_authorized_client_create_post(self):
         """Валидная форма создает запись в Post, редирект работает."""
         small_gif = (
@@ -95,6 +111,7 @@ class PostCreateFormTests(TestCase):
         self.assertRedirects(response, INDEX_URL)
         self.assertEqual(Post.objects.count(), 1)
 
+    @override_settings(MEDIA_ROOT=tempfile.gettempdir())
     def test_post_edit_can_cange_post(self):
         """Форма сохраняет измененную запись в Post."""
         small_gif = (
@@ -125,4 +142,11 @@ class PostCreateFormTests(TestCase):
         self.assertEqual(form_data['group'], self.post.group.id)
         self.assertEqual(form_data['group'], self.post.group.id)
 
-
+    @override_settings(MEDIA_ROOT=tempfile.gettempdir())
+    def test_index_page_get_image(self):
+        """На странице index отображается картинка."""
+        response = self.authorized_client.get(INDEX_URL)
+        text = '<img'
+        text_code = str.encode(text, encoding='utf-8')
+        comments_count_response = response.content
+        self.assertIn(text_code, comments_count_response)
