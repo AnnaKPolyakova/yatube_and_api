@@ -7,6 +7,7 @@ import shutil
 import tempfile
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.cache import cache
 from django.test import override_settings
 
 from posts.models import Group, Post, User, Comment
@@ -254,3 +255,9 @@ class PostPagesTests(TestCase):
         text_code = str.encode(text, encoding='utf-8')
         comments_count_response = response.content
         self.assertNotIn(text_code, comments_count_response)
+        cache.clear()
+        response = self.authorized_client.get(INDEX_URL)
+        text = self.post2.text
+        text_code = str.encode(text, encoding='utf-8')
+        comments_count_response = response.content
+        self.assertIn(text_code, comments_count_response)
