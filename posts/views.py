@@ -23,8 +23,6 @@ def index(request):
 def group_post(request, slug):
     group = get_object_or_404(Group, slug=slug)
     post_list = group.posts.all()
-    # post_list = Post.objects.all().select_related("group").filter(group=get_object_or_404(Group, slug=slug))
-    # post_comment = Post.objects.all().select_related("comments")
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
@@ -57,7 +55,7 @@ def profile(request, username):
             'author': author,
             'page': page,
             'paginator': paginator,
-            'following' : following,
+            'following': following,
         })
     except ObjectDoesNotExist:
         return render(request, 'profile.html', {
@@ -66,23 +64,6 @@ def profile(request, username):
             'paginator': paginator,
         })
 
-
-# def post_view(request, username, post_id):
-#     post = get_object_or_404(Post, id=post_id, author__username=username)
-#     author = post.author
-#     post_comments = post.comments.all()
-#     form = AddCommentForm(request.POST or None)
-#     if not form.is_valid():
-#         return render(request, 'post.html', {
-#             'post': post,
-#             'author': author,
-#             'form': form,
-#             'comments': post_comments,
-#         })
-#     form.instance.author = request.user
-#     form.instance.post = post
-#     form.save()
-#     return redirect('post', username, post_id)
 
 def post_view(request, username, post_id):
     post = get_object_or_404(Post, id=post_id, author__username=username)
