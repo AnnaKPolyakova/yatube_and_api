@@ -7,7 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 
 from posts.forms import PostForm
-from posts.models import Group, Post, User
+from posts.models import Group, Post, User, Follow, Comment
 
 SLUG = 'test'
 SLUG2 = 'test2'
@@ -19,6 +19,8 @@ GROUP_POSTS_URL = reverse('group_post', kwargs={'slug': SLUG})
 GROUP_POSTS_URL2 = reverse('group_post', kwargs={'slug': SLUG2})
 PROFILE_URL = reverse('profile', kwargs={'username': NAME})
 NEW_POST_URL = reverse('new_post')
+PROFILE_FOLLOW_URL = reverse('profile_follow', kwargs={'username': NAME2})
+PROFILE_UNFOLLOW_URL = reverse('profile_unfollow', kwargs={'username': NAME2})
 
 
 class PostCreateFormTests(TestCase):
@@ -77,6 +79,9 @@ class PostCreateFormTests(TestCase):
         self.POST_EDIT_URL = reverse('post_edit',
                                      kwargs={'username': NAME,
                                              'post_id': self.post.id})
+        self.ADD_COMMENT_URL = reverse('add_comment',
+                                       kwargs={'username': NAME,
+                                               'post_id': self.post.id})
 
     @override_settings(MEDIA_ROOT=tempfile.gettempdir())
     def test_authorized_client_create_post(self):
@@ -150,3 +155,37 @@ class PostCreateFormTests(TestCase):
         text_code = str.encode(text, encoding='utf-8')
         comments_count_response = response.content
         self.assertIn(text_code, comments_count_response)
+
+    def test_authorized_client_can_subscribe_to_other_users(self):
+        """Авторизованный пользователь может подписаться на других пользователей и отписываться."""
+        form_data = {
+            'user': self.user,
+            'author': self.user2,
+        }
+        count = Follow.objects.count()
+        response = self.authorized_client.post(
+            PROFILE_FOLLOW_URL,
+            data=form_data,
+        )
+        self.assertEqual(count+1, Follow.objects.count())
+        response = self.authorized_client.post(PROFILE_UNFOLLOW_URL)
+        self.assertEqual(count, Follow.objects.count())
+
+    def test_only_authorized_client_can_add_comment(self):
+        """Только Авторизованный пользователь может добавить комментарий к посту."""
+        form_data = {
+            'post': self.post,
+            'author': self.user,
+            'text': 'Test_comment'
+        }
+        count = Comment.objects.filter(author__comments=self.user.id).count()
+        response = self.authorized_client.post(
+            self.ADD_COMMENT_URL,
+            data=form_data,
+        )
+        self.assertEqual(count+1, Comment.objects.filter(author__comments=self.user.id).count())
+        response = self.guest_client.post(
+            self.ADD_COMMENT_URL,
+            data=form_data,
+        )
+        self.assertEqual(count+1, Comment.objects.filter(author__comments=self.user.id).count())

@@ -10,11 +10,12 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.cache import cache
 from django.test import override_settings
 
-from posts.models import Group, Post, User, Comment
+from posts.models import Group, Post, User, Comment, Follow
 
 SLUG = 'test'
 SLUG2 = 'test2'
 NAME = 'test'
+NAME2 = 'test2'
 
 INDEX_URL = reverse('index')
 GROUP_POSTS_URL = reverse('group_post', kwargs={'slug': SLUG})
@@ -25,6 +26,7 @@ TECHNOLOGIES = '/about-spec/'
 TECHNOLOGIES_URL = reverse('about-spec')
 PROFILE_URL = reverse('profile', kwargs={'username': NAME})
 NEW_POST_URL = reverse('new_post')
+FOLLOW_INDEX_URL = reverse('follow_index')
 
 
 class PostPagesTests(TestCase):
@@ -34,7 +36,12 @@ class PostPagesTests(TestCase):
         # на момент теста медиа папка будет перопределена
         settings.MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
         cls.user = User.objects.create_user(
-            username='test',
+            username=NAME,
+            first_name='test_name',
+            last_name='test_last_name'
+        )
+        cls.user2 = User.objects.create_user(
+            username=NAME2,
             first_name='test_name',
             last_name='test_last_name'
         )
@@ -98,6 +105,10 @@ class PostPagesTests(TestCase):
         # Создаём авторизованного клиента
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+        self.follow = Follow.objects.create(
+            user=self.user,
+            author=self.user2,
+        )
 
     def test_new_post_show_correct_context(self):
         """Шаблон new_post сформирован с правильным контекстом."""
@@ -113,7 +124,7 @@ class PostPagesTests(TestCase):
                 self.assertIsInstance(form_field, expected)
 
     def test_post_edit_show_correct_context(self):
-        """Шаблон new_post сформирован с правильным контекстом."""
+        """Шаблон edit_post сформирован с правильным контекстом."""
         response = self.authorized_client.get(self.POST_EDIT_URL)
         form_fields = {
             'text': forms.fields.CharField,
@@ -189,7 +200,7 @@ class PostPagesTests(TestCase):
                          response.context.get('flatpage').url)
 
     def test_technologies_show_correct_context(self):
-        """Шаблон about_author сформирован с правильным контекстом."""
+        """Шаблон technologies сформирован с правильным контекстом."""
         response = self.guest_client.get(TECHNOLOGIES_URL)
         self.assertEqual(self.technologies.content,
                          response.context.get('flatpage').content)
@@ -214,37 +225,6 @@ class PostPagesTests(TestCase):
 
     def test_index_cash_is_working(self):
         # Удостоверимся, что на странице index работает cash  на вывод постов
-        self.post2 = Post.objects.create(
-            text='Test',
-            author=self.user,
-        )
-        self.POST_EDIT_URL2 = reverse('post_edit',
-                                      kwargs={'username': NAME,
-                                              'post_id': self.post2.id})
-        response = self.authorized_client.get(INDEX_URL)
-        form_data = {
-            'text': 'Test_new_one',
-            'group': self.group2.id,
-        }
-        response = self.authorized_client.post(
-            self.POST_EDIT_URL2,
-            data=form_data,
-            follow=True
-        )
-        self.comm = Comment.objects.create(
-            text='Test_comment',
-            author=self.user,
-            post=self.post,
-        )
-        text=form_data['text']
-        text_code=str.encode(text, encoding='utf-8')
-        response = self.authorized_client.get(INDEX_URL)
-        response2 = response.context.get('page')
-        comments_count_response = response.content
-        self.assertNotIn(text_code, comments_count_response)
-
-    def test_index_cash_is_working(self):
-        # Удостоверимся, что на странице index работает cash  на вывод постов
         response = self.authorized_client.get(INDEX_URL)
         self.post2 = Post.objects.create(
             text='Test_cash',
@@ -261,3 +241,19 @@ class PostPagesTests(TestCase):
         text_code = str.encode(text, encoding='utf-8')
         comments_count_response = response.content
         self.assertIn(text_code, comments_count_response)
+
+    def test_post_following_get_to_favorite_author_page(self):
+        # Удостоверимся, что новая запись пользователя появляется
+        # в ленте тех, кто на него подписан и не появляется в ленте тех,
+        # кто не подписан на него.
+        self.post = Post.objects.create(
+            text='Test',
+            author=self.user2,
+        )
+        response = self.authorized_client.get(FOLLOW_INDEX_URL)
+        page_response = response.context.get('page')
+        self.assertIn(self.post, page_response)
+        self.follow.delete()
+        response = self.authorized_client.get(FOLLOW_INDEX_URL)
+        page_response = response.context.get('page')
+        self.assertNotIn(self.post, page_response)
