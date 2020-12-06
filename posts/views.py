@@ -57,13 +57,13 @@ def profile(request, username):
             'author': author,
             'page': page,
             'paginator': paginator,
-            'following' : following
+            'following' : following,
         })
     except ObjectDoesNotExist:
         return render(request, 'profile.html', {
             'author': author,
             'page': page,
-            'paginator': paginator
+            'paginator': paginator,
         })
 
 
