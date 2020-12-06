@@ -2,9 +2,10 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.conf.urls import handler404, handler500
+from django.core.exceptions import ObjectDoesNotExist
 
-from .forms import PostForm, AddCommentForm
-from .models import Group, Post, User
+from .forms import PostForm, CommentForm
+from .models import Group, Post, User, Follow
 
 
 def index(request):
@@ -50,11 +51,20 @@ def profile(request, username):
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
-    return render(request, 'profile.html', {
-        'author': author,
-        'page': page,
-        'paginator': paginator
-    })
+    try:
+        following = Follow.objects.filter(author=author.id, user=request.user.id)
+        return render(request, 'profile.html', {
+            'author': author,
+            'page': page,
+            'paginator': paginator,
+            'following' : following
+        })
+    except ObjectDoesNotExist:
+        return render(request, 'profile.html', {
+            'author': author,
+            'page': page,
+            'paginator': paginator
+        })
 
 
 # def post_view(request, username, post_id):
@@ -78,7 +88,7 @@ def post_view(request, username, post_id):
     post = get_object_or_404(Post, id=post_id, author__username=username)
     author = post.author
     post_comments = post.comments.all()
-    form = AddCommentForm(request.POST or None)
+    form = CommentForm(request.POST or None)
     return render(request, 'post.html', {
             'post': post,
             'author': author,
@@ -91,7 +101,7 @@ def post_view(request, username, post_id):
 def add_comment(request, username, post_id):
     post = get_object_or_404(Post, id=post_id, author__username=username)
     author = post.author
-    form = AddCommentForm(request.POST or None)
+    form = CommentForm(request.POST or None)
     if not form.is_valid():
         return render(request, 'comments.html',
                       {'form': form,
@@ -115,6 +125,42 @@ def post_edit(request, username, post_id):
         form.save()
         return redirect('post', username, post_id)
     return render(request, "new_post.html", {'form': form, 'post': post})
+
+
+@login_required
+def follow_index(request):
+    post_list = Post.objects.filter(author__following__user=request.user)
+    paginator = Paginator(post_list, 10)
+    page_number = request.GET.get('page')
+    page = paginator.get_page(page_number)
+    return render(request, 'follow.html', {
+        'page': page,
+        'paginator': paginator
+    })
+
+
+@login_required
+def profile_follow(request, username):
+    author = User.objects.get(username=username)
+    if author == request.user:
+        return render(request, "profile.html", {'author': author})
+    else:
+        if Follow.objects.filter(author=author.id, user=request.user.id).exists():
+            return render(request, "profile.html", {'author': author})
+        else:
+            Follow.objects.create(
+                    user=request.user,
+                    author=author,
+                )
+            return redirect('profile',username=username)
+
+
+@login_required
+def profile_unfollow(request, username):
+    author = User.objects.get(username=username)
+    follow_dell = Follow.objects.get(author=author.id, user=request.user.id)
+    follow_dell.delete()
+    return redirect('profile', username=username)
 
 
 def page_not_found(request, exception):
