@@ -18,9 +18,10 @@ TECHNOLOGIES_URL = reverse('about-spec')
 PROFILE_URL = reverse('profile', kwargs={'username': NAME})
 NEW_POST_URL = reverse('new_post')
 LOGIN_URL = reverse('login')
+FOLLOW_INDEX_URL = reverse('follow_index')
 PAGE_NOT_EXIST_URL = '/dfdvdfcv/'
 NEXT_URL = '?next='
-NEW_POST_REDIRECTS_URL = LOGIN_URL+NEXT_URL+NEW_POST_URL
+NEW_POST_REDIRECTS_URL = LOGIN_URL + NEXT_URL + NEW_POST_URL
 
 
 class URLTests(TestCase):
@@ -58,6 +59,9 @@ class URLTests(TestCase):
         cls.POST_EDIT_URL = reverse('post_edit',
                                     kwargs={'username': NAME,
                                             'post_id': cls.post.id})
+        cls.ADD_COMMENT_URL = reverse('add_comment',
+                                      kwargs={'username': NAME,
+                                              'post_id': cls.post.id})
 
     def setUp(self):
         # Создаем неавторизованного клиента
@@ -68,7 +72,7 @@ class URLTests(TestCase):
 
     # Проверяем общедоступные страницы
     def test_url_exists_at_desired_location(self):
-        """Страница 'index','group_post', 'profile', 'post',
+        """Страницы 'index','group_post', 'profile', 'post',
         TECHNOLOGIES,ABOUT_AUTHOR_URL
         доступны любому пользователю."""
         url_status_code = [
@@ -81,20 +85,22 @@ class URLTests(TestCase):
         ]
         for value in url_status_code:
             response = self.guest_client.get(value)
-            with self.subTest('Ошибка'+value):
+            with self.subTest('Ошибка' + value):
                 self.assertEqual(response.status_code, 200)
 
     # Проверяем доступность страниц для авторизованного пользователя
     def test_pages_detail_url_exists_at_desired_location_authorized(self):
-        """Страницы 'new_post' доступны авторизованному пользователю,
+        """Страницы 'new_post', 'follow_index',
+        доступны авторизованному пользователю,
          'post_edit' авторизованному пользователю автору поста"""
         url_status_code = [
             NEW_POST_URL,
             self.POST_EDIT_URL,
+            FOLLOW_INDEX_URL,
         ]
         for value in url_status_code:
             response = self.authorized_client.get(value)
-            with self.subTest('Ошибка'+value):
+            with self.subTest('Ошибка' + value):
                 self.assertEqual(response.status_code, 200)
 
     # Проверяем редиректы для неавторизованного пользователя
@@ -115,9 +121,10 @@ class URLTests(TestCase):
             PROFILE_URL: 'profile.html',
             self.POST_EDIT_URL: 'new_post.html',
             self.POST_URL: 'post.html',
+            FOLLOW_INDEX_URL: 'follow.html',
         }
         for url, template in templates_url_names.items():
-            with self.subTest('Ошибка'+url):
+            with self.subTest('Ошибка' + url):
                 response = self.authorized_client.get(url)
                 self.assertTemplateUsed(response, template)
 
@@ -131,8 +138,15 @@ class URLTests(TestCase):
     def test_post_edit_chek_redirect_page(self):
         """Страница '/post_edit/' не доступна
         не авторизованному пользователю."""
-        response = self.guest_client.get(self.POST_EDIT_URL)
-        self.assertEqual(response.status_code, 302)
+        url_status_code = [
+            NEW_POST_URL,
+            self.POST_EDIT_URL,
+            FOLLOW_INDEX_URL,
+        ]
+        for value in url_status_code:
+            response = self.guest_client.get(value)
+            with self.subTest('Ошибка' + value):
+                self.assertEqual(response.status_code, 302)
 
     def test_post_edit_page(self):
         """Страница '/post_edit/' перенаправит

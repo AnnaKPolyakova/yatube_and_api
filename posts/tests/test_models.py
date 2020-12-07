@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from posts.models import Group, Post, User, Comment, Follow
+from posts.models import Comment, Follow, Group, Post, User
 
 SLUG = 'test'
 NAME = 'test'

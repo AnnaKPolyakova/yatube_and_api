@@ -1,11 +1,11 @@
+from django.conf.urls import handler404, handler500
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
-from django.conf.urls import handler404, handler500
-from django.core.exceptions import ObjectDoesNotExist
 
-from .forms import PostForm, CommentForm
-from .models import Group, Post, User, Follow
+from .forms import CommentForm, PostForm
+from .models import Follow, Group, Post, User
 
 
 def index(request):
@@ -50,7 +50,9 @@ def profile(request, username):
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
     try:
-        following = Follow.objects.filter(author=author.id, user=request.user.id)
+        following = Follow.objects.filter(
+            author=author.id,
+            user=request.user.id)
         return render(request, 'profile.html', {
             'author': author,
             'page': page,
@@ -71,11 +73,11 @@ def post_view(request, username, post_id):
     post_comments = post.comments.all()
     form = CommentForm(request.POST or None)
     return render(request, 'post.html', {
-            'post': post,
-            'author': author,
-            'form': form,
-            'comments': post_comments,
-        })
+        'post': post,
+        'author': author,
+        'form': form,
+        'comments': post_comments,
+    })
 
 
 @login_required
@@ -96,10 +98,14 @@ def add_comment(request, username, post_id):
 
 @login_required
 def post_edit(request, username, post_id):
-    post = get_object_or_404(Post, id=post_id, author__username=username)
+    post = get_object_or_404(Post,
+                             id=post_id,
+                             author__username=username)
     if not request.user.username == username:
         return redirect('post', username, post_id)
-    form = PostForm(request.POST or None, files=request.FILES or None, instance=post)
+    form = PostForm(request.POST or None,
+                    files=request.FILES or None,
+                    instance=post)
     if form.is_valid():
         form.instance.author = request.user
         form.instance.post = post
@@ -126,14 +132,15 @@ def profile_follow(request, username):
     if author == request.user:
         return render(request, "profile.html", {'author': author})
     else:
-        if Follow.objects.filter(author=author.id, user=request.user.id).exists():
+        if Follow.objects.filter(author=author.id,
+                                 user=request.user.id).exists():
             return render(request, "profile.html", {'author': author})
         else:
             Follow.objects.create(
-                    user=request.user,
-                    author=author,
-                )
-            return redirect('profile',username=username)
+                user=request.user,
+                author=author,
+            )
+            return redirect('profile', username=username)
 
 
 @login_required

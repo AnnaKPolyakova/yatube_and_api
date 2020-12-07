@@ -1,16 +1,16 @@
-from django import forms
-from django.contrib.flatpages.models import FlatPage
-from django.contrib.sites.models import Site
-from django.test import Client, TestCase
-from django.urls import reverse
 import shutil
 import tempfile
-from django.conf import settings
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.cache import cache
-from django.test import override_settings
 
-from posts.models import Group, Post, User, Comment, Follow
+from django import forms
+from django.conf import settings
+from django.contrib.flatpages.models import FlatPage
+from django.contrib.sites.models import Site
+from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client, TestCase, override_settings
+from django.urls import reverse
+
+from posts.models import Comment, Follow, Group, Post, User
 
 SLUG = 'test'
 SLUG2 = 'test2'
@@ -92,6 +92,11 @@ class PostPagesTests(TestCase):
         cls.POST_EDIT_URL = reverse('post_edit',
                                     kwargs={'username': NAME,
                                             'post_id': cls.post.id})
+        cls.comment = Comment.objects.create(
+            text='Test',
+            author=cls.user,
+            post=cls.post,
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -184,10 +189,13 @@ class PostPagesTests(TestCase):
                                  '{url} работает не правильно')
 
     def test_post_show_correct_context(self):
-        """Шаблон group_post сформирован с правильным контекстом (post)."""
+        """Шаблон group_post сформирован с правильным
+        контекстом (post, comments)."""
         response = self.authorized_client.get(self.POST_URL)
         post_context = response.context.get('post')
+        comments_context = response.context.get('comments')[0]
         self.assertEqual(post_context, self.post)
+        self.assertEqual(self.comment, comments_context)
 
     def test_about_author_show_correct_context(self):
         """Шаблон about_author сформирован с правильным контекстом."""

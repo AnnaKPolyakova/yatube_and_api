@@ -1,13 +1,13 @@
-from django.test import Client, TestCase
-from django.urls import reverse
 import shutil
 import tempfile
+
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
+from django.test import Client, TestCase, override_settings
+from django.urls import reverse
 
 from posts.forms import PostForm
-from posts.models import Group, Post, User, Follow, Comment
+from posts.models import Comment, Follow, Group, Post, User
 
 SLUG = 'test'
 SLUG2 = 'test2'
@@ -157,7 +157,8 @@ class PostCreateFormTests(TestCase):
         self.assertIn(text_code, comments_count_response)
 
     def test_authorized_client_can_subscribe_to_other_users(self):
-        """Авторизованный пользователь может подписаться на других пользователей и отписываться."""
+        """Авторизованный пользователь может подписаться
+        на других пользователей и отписываться."""
         form_data = {
             'user': self.user,
             'author': self.user2,
@@ -172,7 +173,8 @@ class PostCreateFormTests(TestCase):
         self.assertEqual(count, Follow.objects.count())
 
     def test_only_authorized_client_can_add_comment(self):
-        """Только Авторизованный пользователь может добавить комментарий к посту."""
+        """Только Авторизованный пользователь может
+        добавить комментарий к посту."""
         form_data = {
             'post': self.post,
             'author': self.user,
@@ -183,9 +185,11 @@ class PostCreateFormTests(TestCase):
             self.ADD_COMMENT_URL,
             data=form_data,
         )
-        self.assertEqual(count+1, Comment.objects.filter(author__comments=self.user.id).count())
+        self.assertEqual(count+1, Comment.objects.filter(
+            author__comments=self.user.id).count())
         response = self.guest_client.post(
             self.ADD_COMMENT_URL,
             data=form_data,
         )
-        self.assertEqual(count+1, Comment.objects.filter(author__comments=self.user.id).count())
+        self.assertEqual(count+1, Comment.objects.filter(
+            author__comments=self.user.id).count())
