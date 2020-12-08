@@ -27,7 +27,13 @@ TECHNOLOGIES_URL = reverse('about-spec')
 PROFILE_URL = reverse('profile', kwargs={'username': NAME})
 NEW_POST_URL = reverse('new_post')
 FOLLOW_INDEX_URL = reverse('follow_index')
-
+SMALL_GIF = (
+    b'\x47\x49\x46\x38\x39\x61\x01\x00'
+    b'\x01\x00\x00\x00\x00\x21\xf9\x04'
+    b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
+    b'\x00\x00\x01\x00\x01\x00\x00\x02'
+    b'\x02\x4c\x01\x00\x3b'
+)
 
 class PostPagesTests(TestCase):
     @classmethod
@@ -55,23 +61,10 @@ class PostPagesTests(TestCase):
             slug=SLUG2,
             description='Тестовое описание группы2',
         )
-        small_gif = (
-            b'\x47\x49\x46\x38\x39\x61\x01\x00'
-            b'\x01\x00\x00\x00\x00\x21\xf9\x04'
-            b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
-            b'\x00\x00\x01\x00\x01\x00\x00\x02'
-            b'\x02\x4c\x01\x00\x3b'
-        )
-        uploaded = SimpleUploadedFile(
+        cls.uploaded = SimpleUploadedFile(
             name='small.gif',
-            content=small_gif,
+            content=SMALL_GIF,
             content_type='image/gif'
-        )
-        cls.post = Post.objects.create(
-            text='Test',
-            group=cls.group,
-            author=cls.user,
-            image=uploaded,
         )
         cls.site = Site(id=1, name='site', domain='127.0.0.1:8000')
         cls.site.save()
@@ -87,16 +80,6 @@ class PostPagesTests(TestCase):
         )
         cls.about_author.sites.add(cls.site)
         cls.technologies.sites.add(cls.site)
-        cls.POST_URL = reverse('post', kwargs={'username': NAME,
-                                               'post_id': cls.post.id})
-        cls.POST_EDIT_URL = reverse('post_edit',
-                                    kwargs={'username': NAME,
-                                            'post_id': cls.post.id})
-        cls.comment = Comment.objects.create(
-            text='Test',
-            author=cls.user,
-            post=cls.post,
-        )
 
     @classmethod
     def tearDownClass(cls):
@@ -113,6 +96,22 @@ class PostPagesTests(TestCase):
         self.follow = Follow.objects.create(
             user=self.user,
             author=self.user2,
+        )
+        self.post = Post.objects.create(
+            text='Test',
+            group=self.group,
+            author=self.user,
+            image=self.uploaded,
+        )
+        self.POST_URL = reverse('post', kwargs={'username': NAME,
+                                               'post_id': self.post.id})
+        self.POST_EDIT_URL = reverse('post_edit',
+                                    kwargs={'username': NAME,
+                                            'post_id': self.post.id})
+        self.comment = Comment.objects.create(
+            text='Test',
+            author=self.user,
+            post=self.post,
         )
 
     def test_new_post_show_correct_context(self):
@@ -158,35 +157,34 @@ class PostPagesTests(TestCase):
         response_group = response.context.get('group')
         self.assertEqual(self.group, response_group)
 
-    def test_pages_show_correct_context(self):
+    def test_page_templates_show_correct_context_page(self):
         """Шаблон index, group_post, profile
         сформирован с правильным кнтекством (page)"""
-        url_and_context = {
-            INDEX_URL: 'page',
-            GROUP_POSTS_URL: 'page',
-            PROFILE_URL: 'page',
-        }
-        for url, context in url_and_context.items():
+        url = (
+            INDEX_URL,
+            GROUP_POSTS_URL,
+            PROFILE_URL,
+        )
+        for url in url:
             with self.subTest('Ошибка'+url):
                 response = self.authorized_client.get(url)
-                post = response.context[context][0]
+                post = response.context['page'][0]
                 self.assertEqual(self.post,
                                  post,)
 
-    def test_profile_show_correct_context(self):
+    def test_profile_and_post_show_correct_context_author(self):
         """Шаблон profile, post сформирован
-        с правильным контекстом (author, author)."""
-        url_and_context = {
-            PROFILE_URL: 'author',
-            self.POST_URL: 'author',
-        }
-        for url, context in url_and_context.items():
-            with self.subTest():
+        с правильным контекстом (author)."""
+        url = (
+            PROFILE_URL,
+            self.POST_URL,
+        )
+        for url in url:
+            with self.subTest('Ошибка:'+url):
                 response = self.authorized_client.get(url)
-                author_context = response.context.get(context)
+                author_context = response.context.get('author')
                 self.assertEqual(author_context,
-                                 self.user,
-                                 '{url} работает не правильно')
+                                 self.user)
 
     def test_post_show_correct_context(self):
         """Шаблон group_post сформирован с правильным
@@ -234,26 +232,23 @@ class PostPagesTests(TestCase):
     def test_index_cash_is_working(self):
         # Удостоверимся, что на странице index работает cash  на вывод постов
         response = self.authorized_client.get(INDEX_URL)
+        content_cash = response.content
         self.post2 = Post.objects.create(
             text='Test_cash',
             author=self.user,
         )
         response = self.authorized_client.get(INDEX_URL)
-        text = self.post2.text
-        text_code = str.encode(text, encoding='utf-8')
+        content_new = response.content
         comments_count_response = response.content
-        self.assertNotIn(text_code, comments_count_response)
+        self.assertEqual(content_cash, content_new)
         cache.clear()
         response = self.authorized_client.get(INDEX_URL)
-        text = self.post2.text
-        text_code = str.encode(text, encoding='utf-8')
-        comments_count_response = response.content
-        self.assertIn(text_code, comments_count_response)
+        content_update = response.content
+        self.assertNotEqual(content_cash, content_update)
 
     def test_post_following_get_to_favorite_author_page(self):
         # Удостоверимся, что новая запись пользователя появляется
-        # в ленте тех, кто на него подписан и не появляется в ленте тех,
-        # кто не подписан на него.
+        # в ленте тех, кто на него подписан.
         self.post = Post.objects.create(
             text='Test',
             author=self.user2,
@@ -262,6 +257,15 @@ class PostPagesTests(TestCase):
         page_response = response.context.get('page')
         self.assertIn(self.post, page_response)
         self.follow.delete()
+        response = self.authorized_client.get(FOLLOW_INDEX_URL)
+        page_response = response.context.get('page')
+        self.assertNotIn(self.post, page_response)
+
+    def test_post_following_do_not_get_to_not_favorite_author_page(self):
+        # Удостоверимся, что новая запись пользователя не появляется в ленте тех,
+        # кто не подписан на него.
+        self.follow.delete()
+        self.authorized_client.force_login(self.user2)
         response = self.authorized_client.get(FOLLOW_INDEX_URL)
         page_response = response.context.get('page')
         self.assertNotIn(self.post, page_response)

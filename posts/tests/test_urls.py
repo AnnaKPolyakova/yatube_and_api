@@ -83,9 +83,9 @@ class URLTests(TestCase):
             ABOUT_AUTHOR_URL,
             INDEX_URL,
         ]
-        for value in url_status_code:
-            response = self.guest_client.get(value)
-            with self.subTest('Ошибка' + value):
+        for url in url_status_code:
+            response = self.guest_client.get(url)
+            with self.subTest('Ошибка' + url):
                 self.assertEqual(response.status_code, 200)
 
     # Проверяем доступность страниц для авторизованного пользователя
@@ -98,9 +98,9 @@ class URLTests(TestCase):
             self.POST_EDIT_URL,
             FOLLOW_INDEX_URL,
         ]
-        for value in url_status_code:
-            response = self.authorized_client.get(value)
-            with self.subTest('Ошибка' + value):
+        for url in url_status_code:
+            response = self.authorized_client.get(url)
+            with self.subTest('Ошибка' + url):
                 self.assertEqual(response.status_code, 200)
 
     # Проверяем редиректы для неавторизованного пользователя
@@ -143,9 +143,9 @@ class URLTests(TestCase):
             self.POST_EDIT_URL,
             FOLLOW_INDEX_URL,
         ]
-        for value in url_status_code:
-            response = self.guest_client.get(value)
-            with self.subTest('Ошибка' + value):
+        for url in url_status_code:
+            response = self.guest_client.get(url)
+            with self.subTest('Ошибка' + url):
                 self.assertEqual(response.status_code, 302)
 
     def test_post_edit_page(self):

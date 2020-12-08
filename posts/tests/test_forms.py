@@ -22,6 +22,14 @@ NEW_POST_URL = reverse('new_post')
 PROFILE_FOLLOW_URL = reverse('profile_follow', kwargs={'username': NAME2})
 PROFILE_UNFOLLOW_URL = reverse('profile_unfollow', kwargs={'username': NAME2})
 
+SMALL_GIF = (
+    b'\x47\x49\x46\x38\x39\x61\x01\x00'
+    b'\x01\x00\x00\x00\x00\x21\xf9\x04'
+    b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
+    b'\x00\x00\x01\x00\x01\x00\x00\x02'
+    b'\x02\x4c\x01\x00\x3b'
+)
+
 
 class PostCreateFormTests(TestCase):
     @classmethod
@@ -42,6 +50,16 @@ class PostCreateFormTests(TestCase):
             description='Тестовое описание группы',
         )
         cls.form = PostForm()
+        cls.UPLOADED = SimpleUploadedFile(
+            name='small.gif',
+            content=SMALL_GIF,
+            content_type='image/gif'
+        )
+        cls.UPLOADED2 = SimpleUploadedFile(
+            name='small.gif',
+            content=SMALL_GIF,
+            content_type='image/gif'
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -56,23 +74,11 @@ class PostCreateFormTests(TestCase):
         # Создаём авторизованного клиента
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
-        small_gif = (
-            b'\x47\x49\x46\x38\x39\x61\x01\x00'
-            b'\x01\x00\x00\x00\x00\x21\xf9\x04'
-            b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
-            b'\x00\x00\x01\x00\x01\x00\x00\x02'
-            b'\x02\x4c\x01\x00\x3b'
-        )
-        uploaded = SimpleUploadedFile(
-            name='small.gif',
-            content=small_gif,
-            content_type='image/gif'
-        )
         self.post = Post.objects.create(
             text='Test',
             group=self.group,
             author=self.user,
-            image=uploaded,
+            image=self.UPLOADED,
         )
         self.POST_URL = reverse('post', kwargs={'username': NAME,
                                                 'post_id': self.post.id})
@@ -86,20 +92,9 @@ class PostCreateFormTests(TestCase):
     @override_settings(MEDIA_ROOT=tempfile.gettempdir())
     def test_authorized_client_create_post(self):
         """Валидная форма создает запись в Post, редирект работает."""
-        small_gif = (
-            b'\x47\x49\x46\x38\x39\x61\x01\x00'
-            b'\x01\x00\x00\x00\x00\x21\xf9\x04'
-            b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
-            b'\x00\x00\x01\x00\x01\x00\x00\x02'
-            b'\x02\x4c\x01\x00\x3b'
-        )
-        uploaded = SimpleUploadedFile(
-            name='small.gif',
-            content=small_gif,
-            content_type='image/gif'
-        )
+        uploaded = self.UPLOADED2
         data = {
-            'text': 'Test',
+            'text': 'Test2',
             'group': self.group.id,
             'image': uploaded,
         }
@@ -119,7 +114,7 @@ class PostCreateFormTests(TestCase):
     @override_settings(MEDIA_ROOT=tempfile.gettempdir())
     def test_post_edit_can_cange_post(self):
         """Форма сохраняет измененную запись в Post."""
-        small_gif = (
+        new_gif = (
             b'\x47\x49\x46\x38\x39\x61\x01\x00'
             b'\x01\x00\x00\x00\x00\x21\xf9\x04'
             b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
@@ -128,7 +123,7 @@ class PostCreateFormTests(TestCase):
         )
         uploaded = SimpleUploadedFile(
             name='small.gif',
-            content=small_gif,
+            content=new_gif,
             content_type='image/gif'
         )
         form_data = {
@@ -145,7 +140,9 @@ class PostCreateFormTests(TestCase):
         self.assertRedirects(response, self.POST_URL)
         self.assertEqual(form_data['text'], self.post.text)
         self.assertEqual(form_data['group'], self.post.group.id)
-        self.assertEqual(form_data['group'], self.post.group.id)
+        self.assertEqual(self.post.image.size, form_data['image'].size)
+        print(form_data['image'])
+        print(self.post.image)
 
     @override_settings(MEDIA_ROOT=tempfile.gettempdir())
     def test_index_page_get_image(self):
@@ -153,43 +150,61 @@ class PostCreateFormTests(TestCase):
         response = self.authorized_client.get(INDEX_URL)
         text = '<img'
         text_code = str.encode(text, encoding='utf-8')
-        comments_count_response = response.content
-        self.assertIn(text_code, comments_count_response)
+        self.assertIn(text_code, response.content)
 
     def test_authorized_client_can_subscribe_to_other_users(self):
         """Авторизованный пользователь может подписаться
-        на других пользователей и отписываться."""
+        на других пользователей."""
         form_data = {
             'user': self.user,
             'author': self.user2,
         }
         count = Follow.objects.count()
-        response = self.authorized_client.post(
-            PROFILE_FOLLOW_URL,
-            data=form_data,
-        )
+        response = self.authorized_client.get(PROFILE_FOLLOW_URL)
+        follow = Follow.objects.get(user=self.user)
         self.assertEqual(count+1, Follow.objects.count())
+        self.assertEqual(follow.author, self.user2)
+
+    def test_authorized_client_can_unsubscribe_to_other_users(self):
+        """Авторизованный пользователь может отписываться
+        от пользователя."""
+        follow = Follow.objects.create(
+            user=self.user,
+            author=self.user2,
+        )
+        count = Follow.objects.count()
         response = self.authorized_client.post(PROFILE_UNFOLLOW_URL)
-        self.assertEqual(count, Follow.objects.count())
+        self.assertEqual(count-1, Follow.objects.count())
 
     def test_only_authorized_client_can_add_comment(self):
         """Только Авторизованный пользователь может
         добавить комментарий к посту."""
-        form_data = {
-            'post': self.post,
-            'author': self.user,
+        data = {
             'text': 'Test_comment'
         }
-        count = Comment.objects.filter(author__comments=self.user.id).count()
+        count = self.user.comments.count()
         response = self.authorized_client.post(
             self.ADD_COMMENT_URL,
-            data=form_data,
+            data=data,
+            follow=True
         )
-        self.assertEqual(count+1, Comment.objects.filter(
+        comment = response.context['comments'][0]
+        self.assertEqual(comment.text, data['text'])
+        self.assertEqual(comment.author, self.user)
+        self.assertEqual(comment.post, self.post)
+        self.assertEqual(count + 1, Comment.objects.filter(
             author__comments=self.user.id).count())
+
+    def test_gest_client_can_not_add_comment(self):
+        """Не авторизованный пользователь неможет
+        добавить комментарий к посту."""
+        form_data = {
+            'text': 'Test_comment'
+        }
+        count = self.user.comments.count()
         response = self.guest_client.post(
             self.ADD_COMMENT_URL,
             data=form_data,
         )
-        self.assertEqual(count+1, Comment.objects.filter(
-            author__comments=self.user.id).count())
+        self.assertEqual(count, Comment.objects.filter(
+        author__comments=self.user.id).count())
