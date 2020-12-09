@@ -35,6 +35,7 @@ SMALL_GIF = (
     b'\x02\x4c\x01\x00\x3b'
 )
 
+
 class PostPagesTests(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -103,11 +104,12 @@ class PostPagesTests(TestCase):
             author=self.user,
             image=self.uploaded,
         )
-        self.POST_URL = reverse('post', kwargs={'username': NAME,
-                                               'post_id': self.post.id})
-        self.POST_EDIT_URL = reverse('post_edit',
-                                    kwargs={'username': NAME,
-                                            'post_id': self.post.id})
+        self.POST_URL = reverse('post', kwargs={
+            'username': NAME,
+            'post_id': self.post.id})
+        self.POST_EDIT_URL = reverse('post_edit', kwargs={
+            'username': NAME,
+            'post_id': self.post.id})
         self.comment = Comment.objects.create(
             text='Test',
             author=self.user,
@@ -262,7 +264,8 @@ class PostPagesTests(TestCase):
         self.assertNotIn(self.post, page_response)
 
     def test_post_following_do_not_get_to_not_favorite_author_page(self):
-        # Удостоверимся, что новая запись пользователя не появляется в ленте тех,
+        # Удостоверимся, что новая запись пользователя
+        # не появляется в ленте тех,
         # кто не подписан на него.
         self.follow.delete()
         self.authorized_client.force_login(self.user2)

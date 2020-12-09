@@ -174,5 +174,6 @@ class FollowModelTest(TestCase):
     def test_str(self):
         """Метод str выводит ожидаемые значения."""
         follow = self.follow
-        expected_object_name = (f'@Подписчик{follow.user} @Подписка{follow.author}')
+        expected_object_name = (f'@Подписчик{follow.user} '
+                                f'@Подписка{follow.author}')
         self.assertEquals(expected_object_name, str(follow))

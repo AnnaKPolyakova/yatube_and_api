@@ -207,4 +207,4 @@ class PostCreateFormTests(TestCase):
             data=form_data,
         )
         self.assertEqual(count, Comment.objects.filter(
-        author__comments=self.user.id).count())
+            author__comments=self.user.id).count())
