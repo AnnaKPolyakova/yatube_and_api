@@ -28,17 +28,19 @@
                     </li>
                     {% if author != request.user %}
                         <li class="list-group-item">
+                            <a class="btn btn-lg btn-light" href="
                             {% if following%}
-                                <a class="btn btn-lg btn-light"
-                                href="{% url 'profile_unfollow' author.username %}" role="button">
-                                Отписаться
-                                </a>
+                                {% url 'profile_unfollow' author.username %}
                             {% else %}
-                                <a class="btn btn-lg btn-primary"
-                                href="{% url 'profile_follow' author.username %}" role="button">
-                                Подписаться
-                                </a>
+                                {% url 'profile_follow' author.username %}
                             {% endif %}
+                            " role="button">
+                            {% if following%}
+                                Отписаться
+                            {% else %}
+                                Подписаться
+                            {% endif %}
+                            </a>
                         </li>
                     {% endif %}
                 </ul>
@@ -50,7 +52,7 @@
             {% endfor %}<!-- Конец блока с отдельным постом -->
             <!-- Остальные посты -->
             {% if page.has_other_pages %}
-            {% include "paginator.html" with items=page paginator=paginator%}
+                {% include "paginator.html" with items=page paginator=paginator%}
             {% endif %}
             <!-- Здесь постраничная навигация паджинатора -->
         </div>
