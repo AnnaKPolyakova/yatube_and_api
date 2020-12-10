@@ -62,6 +62,8 @@ class URLTests(TestCase):
         cls.ADD_COMMENT_URL = reverse('add_comment',
                                       kwargs={'username': NAME,
                                               'post_id': cls.post.id})
+        cls.ADD_COMMENT_REDIRECTS_URL = (LOGIN_URL +
+                                         NEXT_URL + cls.ADD_COMMENT_URL)
 
     def setUp(self):
         # Создаем неавторизованного клиента
@@ -160,3 +162,10 @@ class URLTests(TestCase):
         """Проверяем, возвращает ли сервер код 404 """
         response = self.guest_client.get(PAGE_NOT_EXIST_URL)
         self.assertEqual(response.status_code, 404)
+
+    def test_add_comment_url_redirect_anonymous_on_admin_login(self):
+        """Страница /add_comment/ перенаправит анонимного пользователя
+        на страницу логина."""
+        response = self.client.get(self.ADD_COMMENT_URL, follow=True)
+        self.assertRedirects(
+            response, self.ADD_COMMENT_REDIRECTS_URL)

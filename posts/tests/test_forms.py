@@ -19,6 +19,7 @@ GROUP_POSTS_URL = reverse('group_post', kwargs={'slug': SLUG})
 GROUP_POSTS_URL2 = reverse('group_post', kwargs={'slug': SLUG2})
 PROFILE_URL = reverse('profile', kwargs={'username': NAME})
 NEW_POST_URL = reverse('new_post')
+FOLLOW_INDEX_URL = reverse('follow_index')
 PROFILE_FOLLOW_URL = reverse('profile_follow', kwargs={'username': NAME2})
 PROFILE_UNFOLLOW_URL = reverse('profile_unfollow', kwargs={'username': NAME2})
 
@@ -59,6 +60,10 @@ class PostCreateFormTests(TestCase):
             name='small.gif',
             content=SMALL_GIF,
             content_type='image/gif'
+        )
+        cls.follow = Follow.objects.create(
+            user=cls.user2,
+            author=cls.user,
         )
 
     @classmethod
@@ -147,23 +152,30 @@ class PostCreateFormTests(TestCase):
     @override_settings(MEDIA_ROOT=tempfile.gettempdir())
     def test_index_page_get_image(self):
         """На странице index отображается картинка."""
-        response = self.authorized_client.get(INDEX_URL)
+        self.authorized_client.force_login(self.user2)
         text = '<img'
         text_code = str.encode(text, encoding='utf-8')
-        self.assertIn(text_code, response.content)
+        url = (
+            INDEX_URL,
+            GROUP_POSTS_URL,
+            PROFILE_URL,
+            self.POST_URL,
+            FOLLOW_INDEX_URL,
+        )
+        for url in url:
+            with self.subTest('Ошибка' + url):
+                response = self.authorized_client.get(url)
+                self.assertContains(response, text)
 
     def test_authorized_client_can_subscribe_to_other_users(self):
         """Авторизованный пользователь может подписаться
         на других пользователей."""
-        form_data = {
-            'user': self.user,
-            'author': self.user2,
-        }
         count = Follow.objects.count()
         response = self.authorized_client.get(PROFILE_FOLLOW_URL)
-        follow = Follow.objects.get(user=self.user)
+        follow = Follow.objects.filter(user=self.user,
+                                       author=self.user2).exists()
         self.assertEqual(count+1, Follow.objects.count())
-        self.assertEqual(follow.author, self.user2)
+        self.assertEqual(True, follow)
 
     def test_authorized_client_can_unsubscribe_to_other_users(self):
         """Авторизованный пользователь может отписываться
@@ -174,10 +186,14 @@ class PostCreateFormTests(TestCase):
         )
         count = Follow.objects.count()
         response = self.authorized_client.post(PROFILE_UNFOLLOW_URL)
+        follow = Follow.objects.filter(
+            user=self.user,
+            author=self.user2).exists()
         self.assertEqual(count-1, Follow.objects.count())
+        self.assertEqual(False, follow)
 
-    def test_only_authorized_client_can_add_comment(self):
-        """Только Авторизованный пользователь может
+    def test_authorized_client_can_add_comment(self):
+        """Авторизованный пользователь может
         добавить комментарий к посту."""
         data = {
             'text': 'Test_comment'
@@ -188,12 +204,13 @@ class PostCreateFormTests(TestCase):
             data=data,
             follow=True
         )
+        count_comments_response = response.context['comments'].count()
+        self.assertEqual(count + 1, self.user.comments.count())
         comment = response.context['comments'][0]
         self.assertEqual(comment.text, data['text'])
         self.assertEqual(comment.author, self.user)
         self.assertEqual(comment.post, self.post)
-        self.assertEqual(count + 1, Comment.objects.filter(
-            author__comments=self.user.id).count())
+        self.assertEqual(count_comments_response, 1)
 
     def test_gest_client_can_not_add_comment(self):
         """Не авторизованный пользователь неможет
@@ -206,5 +223,4 @@ class PostCreateFormTests(TestCase):
             self.ADD_COMMENT_URL,
             data=form_data,
         )
-        self.assertEqual(count, Comment.objects.filter(
-            author__comments=self.user.id).count())
+        self.assertEqual(count, self.user.comments.count())

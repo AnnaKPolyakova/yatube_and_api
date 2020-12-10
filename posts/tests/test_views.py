@@ -159,9 +159,9 @@ class PostPagesTests(TestCase):
         response_group = response.context.get('group')
         self.assertEqual(self.group, response_group)
 
-    def test_page_templates_show_correct_context_page(self):
+    def test_index_and_group_posts_and_profile_show_correct_context_page(self):
         """Шаблон index, group_post, profile
-        сформирован с правильным кнтекством (page)"""
+        сформирован с правильным контекством (page)"""
         url = (
             INDEX_URL,
             GROUP_POSTS_URL,
@@ -170,6 +170,8 @@ class PostPagesTests(TestCase):
         for url in url:
             with self.subTest('Ошибка'+url):
                 response = self.authorized_client.get(url)
+                count_page_response = len(response.context['page'].object_list)
+                self.assertEqual(count_page_response, 1)
                 post = response.context['page'][0]
                 self.assertEqual(self.post,
                                  post,)
@@ -190,11 +192,11 @@ class PostPagesTests(TestCase):
 
     def test_post_show_correct_context(self):
         """Шаблон group_post сформирован с правильным
-        контекстом (post, comments)."""
+        контекстом (comments)."""
         response = self.authorized_client.get(self.POST_URL)
-        post_context = response.context.get('post')
+        count_comments_response = response.context['comments'].count()
+        self.assertEqual(count_comments_response, 1)
         comments_context = response.context.get('comments')[0]
-        self.assertEqual(post_context, self.post)
         self.assertEqual(self.comment, comments_context)
 
     def test_about_author_show_correct_context(self):
@@ -216,13 +218,6 @@ class PostPagesTests(TestCase):
                          response.context.get('flatpage').title)
         self.assertEqual(self.technologies.url,
                          response.context.get('flatpage').url)
-
-    def test_post_whith_group_get_to_group_post(self):
-        # Удостоверимся, что на страницу group_post передаётся
-        # пост с соответствующей группой
-        response = self.authorized_client.get(GROUP_POSTS_URL)
-        page_response = response.context.get('page')
-        self.assertIn(self.post, page_response)
 
     def test_post_whith_group_do_not_get_to_group_post(self):
         # Удостоверимся, что на страницу group_post не передаётся
@@ -258,10 +253,6 @@ class PostPagesTests(TestCase):
         response = self.authorized_client.get(FOLLOW_INDEX_URL)
         page_response = response.context.get('page')
         self.assertIn(self.post, page_response)
-        self.follow.delete()
-        response = self.authorized_client.get(FOLLOW_INDEX_URL)
-        page_response = response.context.get('page')
-        self.assertNotIn(self.post, page_response)
 
     def test_post_following_do_not_get_to_not_favorite_author_page(self):
         # Удостоверимся, что новая запись пользователя
