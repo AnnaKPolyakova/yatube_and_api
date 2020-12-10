@@ -144,7 +144,7 @@ class CommentModelTest(TestCase):
         """Метод str выводит ожидаемые значения."""
         comment = self.comment
         expected_object_name = (f'{comment.text[:15]} @{comment.author} '
-                                f'#{comment.post.text} {comment.created}')
+                                f'{comment.post.text[:15]} {comment.created}')
         self.assertEquals(expected_object_name, str(comment))
 
 
@@ -174,6 +174,6 @@ class FollowModelTest(TestCase):
     def test_str(self):
         """Метод str выводит ожидаемые значения."""
         follow = self.follow
-        expected_object_name = (f'@Подписчик{follow.user} '
-                                f'@Подписка{follow.author}')
+        expected_object_name = (f'@Подписчик {follow.user} '
+                                f'@Автор {follow.author}')
         self.assertEquals(expected_object_name, str(follow))

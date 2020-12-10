@@ -29,17 +29,13 @@
                     {% if author != request.user %}
                         <li class="list-group-item">
                             <a class="btn btn-lg btn-light" href="
-                            {% if following%}
-                                {% url 'profile_unfollow' author.username %}
-                            {% else %}
-                                {% url 'profile_follow' author.username %}
-                            {% endif %}
-                            " role="button">
-                            {% if following%}
-                                Отписаться
-                            {% else %}
-                                Подписаться
-                            {% endif %}
+                                {% if following%}
+                                    {% url 'profile_unfollow' author.username %}
+                                {% else %}
+                                    {% url 'profile_follow' author.username %}
+                                {% endif %}
+                                " role="button">
+                                {% if following%}Отписаться{% else %}Подписаться{% endif %}
                             </a>
                         </li>
                     {% endif %}
