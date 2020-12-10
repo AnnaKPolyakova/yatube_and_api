@@ -52,12 +52,14 @@ def profile(request, username):
     if author != request.user:
         following = request.user.is_authenticated and Follow.objects.filter(
             author=author, user=request.user).exists()
-        return render(request, 'profile.html', {
-            'author': author,
-            'page': page,
-            'paginator': paginator,
-            'following': following,
-        })
+    else:
+        following = False
+    return render(request, 'profile.html', {
+        'author': author,
+        'page': page,
+        'paginator': paginator,
+        'following': following,
+    })
 
 
 def post_view(request, username, post_id):
@@ -131,7 +133,6 @@ def profile_follow(request, username):
 
 @login_required
 def profile_unfollow(request, username):
-    author = User.objects.get(username=username)
     follow = get_object_or_404(Follow, author__username=username, user=request.user)
     follow.delete()
     return redirect('profile', username=username)
