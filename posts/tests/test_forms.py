@@ -72,7 +72,6 @@ class PostCreateFormTests(TestCase):
         # Рекурсивно удаляем временную после завершения тестов
         shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=False)
 
-    @override_settings(MEDIA_ROOT=tempfile.gettempdir())
     def setUp(self):
         # Создаём неавторизованного клиента
         self.guest_client = Client()
@@ -149,7 +148,6 @@ class PostCreateFormTests(TestCase):
         print(form_data['image'])
         print(self.post.image)
 
-    @override_settings(MEDIA_ROOT=tempfile.gettempdir())
     def test_index_page_get_image(self):
         """На странице index отображается картинка."""
         self.authorized_client.force_login(self.user2)
