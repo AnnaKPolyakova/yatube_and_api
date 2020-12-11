@@ -118,15 +118,9 @@ class PostCreateFormTests(TestCase):
     @override_settings(MEDIA_ROOT=tempfile.gettempdir())
     def test_post_edit_can_cange_post(self):
         """Форма сохраняет измененную запись в Post."""
-        new_gif = (
-            b'\x47\x49\x46\x38\x39\x61\x01\x00'
-            b'\x01\x00\x00\x00\x00\x21\xf9\x04'
-            b'\x01\x0a\x00\x01\x00\x2c\x00\x00'
-            b'\x00\x00\x01\x00\x01\x00\x00\x02'
-            b'\x02\x4c\x01\x00\x4b'
-        )
+        new_gif = SMALL_GIF
         uploaded = SimpleUploadedFile(
-            name='small.gif',
+            name='new_gif.gif',
             content=new_gif,
             content_type='image/gif'
         )
@@ -152,8 +146,6 @@ class PostCreateFormTests(TestCase):
         """На страницах index, profile, post, group_post,
         profile_follow отображается картинка."""
         self.authorized_client.force_login(self.user2)
-        text = '<img'
-        text_code = str.encode(text, encoding='utf-8')
         url = (
             INDEX_URL,
             GROUP_POSTS_URL,
@@ -164,7 +156,7 @@ class PostCreateFormTests(TestCase):
         for url in url:
             with self.subTest('Ошибка' + url):
                 response = self.authorized_client.get(url)
-                self.assertContains(response, text)
+                self.assertContains(response, '<img')
 
     def test_authorized_client_can_subscribe_to_other_users(self):
         """Авторизованный пользователь может подписаться
@@ -173,8 +165,8 @@ class PostCreateFormTests(TestCase):
         response = self.authorized_client.get(PROFILE_FOLLOW_URL)
         follow = Follow.objects.filter(user=self.user,
                                        author=self.user2).exists()
-        self.assertEqual(count+1, Follow.objects.count())
-        self.assertEqual(True, follow)
+        self.assertEqual(count + 1, Follow.objects.count())
+        self.assertTrue(follow)
 
     def test_authorized_client_can_unsubscribe_to_other_users(self):
         """Авторизованный пользователь может отписываться
@@ -188,8 +180,8 @@ class PostCreateFormTests(TestCase):
         follow = Follow.objects.filter(
             user=self.user,
             author=self.user2).exists()
-        self.assertEqual(count-1, Follow.objects.count())
-        self.assertEqual(False, follow)
+        self.assertEqual(count - 1, Follow.objects.count())
+        self.assertFalse(follow)
 
     def test_authorized_client_can_add_comment(self):
         """Авторизованный пользователь может
@@ -204,12 +196,12 @@ class PostCreateFormTests(TestCase):
             follow=True
         )
         count_comments_response = response.context['comments'].count()
+        self.assertEqual(count_comments_response, 1)
         self.assertEqual(count + 1, self.user.comments.count())
         comment = response.context['comments'][0]
         self.assertEqual(comment.text, data['text'])
         self.assertEqual(comment.author, self.user)
         self.assertEqual(comment.post, self.post)
-        self.assertEqual(count_comments_response, 1)
 
     def test_gest_client_can_not_add_comment(self):
         """Не авторизованный пользователь неможет
