@@ -148,8 +148,9 @@ class PostCreateFormTests(TestCase):
         print(form_data['image'])
         print(self.post.image)
 
-    def test_index_page_get_image(self):
-        """На странице index отображается картинка."""
+    def test_pages_get_image(self):
+        """На страницах index, profile, post, group_post,
+        profile_follow отображается картинка."""
         self.authorized_client.force_login(self.user2)
         text = '<img'
         text_code = str.encode(text, encoding='utf-8')
