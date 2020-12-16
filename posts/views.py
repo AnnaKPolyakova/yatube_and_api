@@ -4,7 +4,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import CommentForm, PostForm
-from .models import Follow, Group, Post, User
+from .models import Follow, Group, Post, User, Like
 
 
 def index(request):
@@ -60,16 +60,19 @@ def profile(request, username):
     })
 
 
-
 def post_view(request, username, post_id):
     post = get_object_or_404(Post, id=post_id, author__username=username)
     comments = post.comments.all()
     form = CommentForm(request.POST or None)
+    like = (request.user.is_authenticated and
+            Like.objects.filter(author__username=request.user.username,
+                                post=post).exists())
     return render(request, 'post.html', {
         'post': post,
         'author': post.author,
         'form': form,
         'comments': comments,
+        'like': like,
     })
 
 
@@ -156,3 +159,23 @@ def server_error(request):
         "misc/500.html",
         status=500
     )
+
+
+@login_required
+def post_like(request, username, post_id):
+    author = get_object_or_404(User, username=request.user)
+    post = get_object_or_404(Post, id=post_id, author__username=username)
+    Like.objects.get_or_create(
+                post=post,
+                author=author,
+            )
+    return redirect('post', username, post_id)
+
+
+@login_required
+def post_delete_like(request, username, post_id):
+    like = get_object_or_404(Like,
+                             author=request.user,
+                             post__id=post_id)
+    like.delete()
+    return redirect('post', username, post_id)

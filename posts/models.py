@@ -115,3 +115,20 @@ class Follow (models.Model):
 
     def __str__(self):
         return f'@Подписчик {self.user} @Автор {self.author}'
+
+
+class Like (models.Model):
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE,
+        related_name='like',
+        verbose_name="Пост",
+    )
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name='like',
+        verbose_name="Автор",
+    )
+
+    def __str__(self):
+        return (f'@{self.author} '
+                f'{self.post.text[:15]}')

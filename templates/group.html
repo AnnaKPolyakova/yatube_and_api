@@ -3,13 +3,6 @@
 {% block header %}{{ group.title }}{% endblock %}
 {% block content %}
 {% load thumbnail %}
-<style type="text/css">
-    .card-text {
-        max-width: 100%;
-        margin-left: 0;
-        overflow-wrap: break-word;
-    }
-</style>
     <div class="card-text">
         {{ group.description|linebreaksbr }}
     </div>

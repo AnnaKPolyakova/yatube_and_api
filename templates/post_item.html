@@ -11,8 +11,27 @@
             <a name="post_{{ post.id }}" href="{% url 'profile' post.author.username %}">
                 <strong class="d-block text-gray-dark">@{{ post.author }}</strong>
             </a>
-            {{ post.text|linebreaksbr }}
+            <a name="{{post.id}}">{{ post.text|linebreaksbr }}</a>
         </p>
+            <!-- Лайки -->
+        {% if AddLike%}
+            <div class="d-flex justify-content-between align-items-center">
+                <a class="button" href="
+                {% if like%}
+                    {% url 'post_delete_like' author.username post.id %}#{{post.id}}
+                {% else %}
+                    {% url 'post_like' author.username post.id %}#{{post.id}}
+                {% endif %}
+                " role="button">
+                {% if like%}
+                    <svg width="24" height="24"><path fill="#E00" fill-rule="evenodd" d="M12 21c.71-.75 4.762-4.628 7.296-7.306 2.27-2.401 2.222-5.9.157-8.071-2.063-2.172-5.4-2.163-7.453.021-2.053-2.184-5.39-2.193-7.454-.021-2.064 2.17-2.11 5.67.158 8.071C7.237 16.372 11.29 20.25 12 21z"/></svg>
+                {% else %}
+                    <svg width="24" height="24"><path fill="none" stroke="#222" stroke-width="2" d="M12 19.587c-1.116-1.104-3.173-3.126-3.917-3.87l-.317-.317c-.912-.914-1.69-1.712-2.335-2.393-1.867-1.975-1.894-4.871-.16-6.695 1.668-1.756 4.341-1.748 6 .017l.729.775.729-.775c1.659-1.765 4.331-1.773 6-.017 1.734 1.824 1.707 4.72-.16 6.695-.644.681-1.424 1.478-2.335 2.393l-.316.316c-.738.737-2.8 2.765-3.918 3.871z"/></svg>
+                {% endif %}
+                </a>
+            </div>
+            Нравится: {{post.like.count}}
+        {% endif %}
         <!-- Если пост относится к какому-нибудь сообществу, то отобразим ссылку на него через # -->
         {% if not group_not and post.group %}
             <a class="card-link muted" href="{% url 'group_post' post.group.slug %}">
