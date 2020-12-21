@@ -10,6 +10,18 @@
                 {% for post in page %}
                 <!-- Вот он, новый include! -->
                     {% include "post_item.html" with post=post %}
+                        {% if post.comments.exists %}
+                    <div class="media card mb-4">
+                        <div class="media-body card-body">
+                            <h5 class="mt-0">
+                                <a href="{% url 'profile' post.comments.first.author.username %}">
+                                    @{{ post.comments.first.author.username }}
+                                </a>
+                            </h5>
+                            <p>{{ post.comments.first.text | linebreaksbr }}</p>
+                        </div>
+                    </div>
+                {% endif %}
                 {% endfor %}
             {% endcache %}
     </div>

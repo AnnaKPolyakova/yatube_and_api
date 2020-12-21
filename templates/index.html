@@ -8,13 +8,35 @@
         {% load cache %}
         {% cache 20 index_page %}
             {% for post in page %}
+            {% if post.comments.exists %}
+                <div class="row">
                     <!-- Вот он, новый include! -->
-                {% include "post_item.html" with post=post%}
+                    <div class="col-md-9">
+                        {% include "post_item.html" with post=post%}
+                    </div>
+                    <div class="col-md-3 mb-3 mt-1">
+                        <div class="media card mb-4">
+                            <div class="media-body card-body">
+                                <p><a class="button"
+                                    href="{% url 'post' post.author.username post.id %}"
+                                    role="button">
+                                    <svg class="_8-yf5 " fill="#262626" height="24" viewBox="0 0 48 48" width="24"><path clip-rule="evenodd" d="M47.5 46.1l-2.8-11c1.8-3.3 2.8-7.1 2.8-11.1C47.5 11 37 .5 24 .5S.5 11 .5 24 11 47.5 24 47.5c4 0 7.8-1 11.1-2.8l11 2.8c.8.2 1.6-.6 1.4-1.4zm-3-22.1c0 4-1 7-2.6 10-.2.4-.3.9-.2 1.4l2.1 8.4-8.3-2.1c-.5-.1-1-.1-1.4.2-1.8 1-5.2 2.6-10 2.6-11.4 0-20.6-9.2-20.6-20.5S12.7 3.5 24 3.5 44.5 12.7 44.5 24z" fill-rule="evenodd"></path></svg>
+                                    </a></p>
+                                <p><<{{ post.comments.first.text | linebreaksbr }}>>
+                                <br>от <a href="{% url 'profile' post.comments.first.author.username %}">
+                                    @{{ post.comments.first.author.username }}
+                                    </a></br></p>
+                                Комментариев: {{ post.comments.count }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
             {% endfor %}
         {% endcache %}
-    </div>
         <!-- Вывод паджинатора -->
         {% if page.has_other_pages %}
             {% include "paginator.html" with items=page paginator=paginator%}
         {% endif %}
+    </div>
 {% endblock %}
