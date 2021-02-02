@@ -22,3 +22,5 @@ wcwidth==0.1.8            # via pytest
 zipp==2.2.0               # via importlib-metadata
 
 django-debug-toolbar~=3.2
+djangorestframework~=3.12.2
+django-filter~=2.4.0

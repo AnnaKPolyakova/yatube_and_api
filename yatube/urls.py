@@ -3,6 +3,7 @@ from django.conf.urls import handler404, handler500
 from django.conf.urls.static import static
 from django.contrib.flatpages import views
 from django.urls import include, path
+from django.views.generic import TemplateView
 
 from posts import views as posts_views
 
@@ -31,6 +32,11 @@ urlpatterns = [
          include('users.urls')),
     path('auth/',
          include('django.contrib.auth.urls')),
+    path('api/', include('api.urls')),
+    path('redoc/', TemplateView.as_view(
+        template_name='redoc.html'),
+         name='redoc'
+         ),
     path('',
          include('posts.urls')),
     path('404/',

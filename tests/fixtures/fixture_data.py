@@ -20,3 +20,4 @@ def post_with_group(user, group):
     from posts.models import Post
     image = tempfile.NamedTemporaryFile(suffix=".jpg").name
     return Post.objects.create(text='Тестовый пост 2', author=user, group=group, image=image)
+

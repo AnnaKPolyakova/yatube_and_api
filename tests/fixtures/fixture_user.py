@@ -10,3 +10,4 @@ def user(django_user_model):
 def user_client(user, client):
     client.force_login(user)
     return client
+
