@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework.authtoken',
     'django_filters',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -176,6 +177,7 @@ INTERNAL_IPS = [
 ]
 
 REST_FRAMEWORK = {
+        'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
         'DEFAULT_PERMISSION_CLASSES': [
             'rest_framework.permissions.IsAuthenticatedOrReadOnly',
         ],

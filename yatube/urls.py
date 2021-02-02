@@ -4,6 +4,11 @@ from django.conf.urls.static import static
 from django.contrib.flatpages import views
 from django.urls import include, path
 from django.views.generic import TemplateView
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
 
 from posts import views as posts_views
 
@@ -33,10 +38,6 @@ urlpatterns = [
     path('auth/',
          include('django.contrib.auth.urls')),
     path('api/', include('api.urls')),
-    path('redoc/', TemplateView.as_view(
-        template_name='redoc.html'),
-         name='redoc'
-         ),
     path('',
          include('posts.urls')),
     path('404/',
@@ -45,6 +46,15 @@ urlpatterns = [
     path('500/',
          posts_views.server_error,
          name='Error_500'),
+]
+
+urlpatterns += [
+        path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+        # Optional UI:
+        path('api/schema/swagger-ui/',
+             SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+        path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'),
+             name='redoc'),
 ]
 
 if settings.DEBUG:
