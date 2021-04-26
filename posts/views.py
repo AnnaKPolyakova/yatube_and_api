@@ -93,7 +93,7 @@ def add_comment(request, username, post_id):
 
 @login_required
 def post_edit(request, username, post_id):
-    if not request.user.username == username:
+    if request.user.username != username:
         return redirect('post', username, post_id)
     post = get_object_or_404(Post,
                              id=post_id,
