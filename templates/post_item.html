@@ -15,7 +15,12 @@
                         <a name="post_{{ post.id }}" href="{% url 'profile' post.author.username %}">
                             <strong class="d-block text-gray-dark">@{{ post.author }}</strong>
                         </a>
-                        <a name="{{post.id}}">{{ post.text|linebreaksbr }}</a>
+                        <!-- Ссылка на редактирование поста для автора -->
+                        {% if user == post.author %}
+                            <a class="navbar-brand" class="button"
+                                href="{% url 'post_edit' post.author.username post.id %}" role="button"><svg x="0px" y="0px" width="30px" height="30px" viewBox="0 0 30 30" enable-background="new 0 0 30 30" xml:space="preserve">  <image id="image0" width="24" height="24" x="0" y="0" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAAAAAA7VNdtAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA/4ePzL8AAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAHdElNRQflBBsMCSL1fVUGAAAEbElEQVRIx42VW2xUVRSGvzUzLaW1hZaLtUDAggKiBC+hNRrQgkQQxahAiI3EBBKHRAWURE1IuIRLUInKxQhqIhqVCAERFAV8MUHRINeaoBIFKRBawBbp9DKzfh/OzLSdtuj/sJKZvdde/3fWOvvgkjwIfo2Q2DO7tNsN07Y2uJP8M0PKCFfX9zWAwrk1jlrl6ZCp+Op8AtkLMeRqdZAymaHmDUUAOSGg9y6TTKALVRecTNmQ0TKZds+sgchjk4+udojiLq9/vyKHzhRa1yL5jn5A1pyY/BlgFO5+fHoeXWhcjScO3wjYjGp3rQCGIT80ki41rV5H7wTsvksur70LqIhwKnoMiBQXhjpmlCzJ+z36M1CxvlCce/EgZE2IJDYcEPSaO6Ek3DGlIO/i/O8Fw1bdBM3LtgiGTOFAf+D2g5kNSfbo3BMAww+7vP7ZCNB3j3g1AtnfJIImp/vjcpd7w9PdgIE7XB5b1R0o2tgkHgbGJ9SpriwCKNgZl/zNHsB1rydcjACWpe142xBbmgf0fjcuNW3OA7KXX5WLwRBaE0xN65S5JLW8VwBEVsXk2j0AiMyKueQMhtBaV0f8+Ed5QPfljVJiXwnAnHpXqsra1Iy3xd8+CMiK1sv90HAgPKU6MBykdCT3H4sBZtdKqioHGH/GJVdmSprc948CwpMuu/yv8hAw9rgHr0kqJRP/VDnAvb/KdeFJgP7Hvfl0TF3jn7wHsLv/lPziVIDhP3jVSAYc6QQ/sFY93YChPyXkf8/NBoq/iPtiYF6Lu6eNtVHjtDBQus9dDYsjQOFnLVIUqIxJneFfmh8G+uyLy+NL8oGe77S4exSobJB7JJhymQzAIPHW2wnoufR+8O3LG8FeqYy0uQ/UAb9xZQ7AgriU2NQL6P5yQnKlqyj5KgohAdqxshFg55cJ37vwIkSeWmAEFlIbM/DrxibXirZ9VwqEZ1wOeq5kFSnp0lJnHD4BlJx3Ls3OPguhiat7yAzUWqaNMQDbXwPZH5YBtWeBslXFZgizlDVLpsgwARb/NAGTKrY9HlS/betwBJY+EmQZ+L/9AtkTlR/tAzBiTTEy1B4/knrYBuCft0D/0V9v2VEDDFgzxmSyIKSh2+Nf3As0PXfkioCSdWPAIBO/fff/OAJUVwfX3sKHQqn9aXiwpDEZJoMDtamVvmPmlYVkGMnQit9aBWGRYCXr+kcqR+SbLKieGsBO8cfefALCt8x8tDQ42f4bf+gHi873qxzbN2Rqhbg2fqhsS31BriHa72+PHwa1YMEzgNy8oHOyzNAMhEJApBB0SljSnCXROoTYGSA/IgiNBHY2tEsg8xcGx6qAW8Nmxse5YEv+Sd546ZDxEfC6KQbdT0oSp+8AeqyItft4eWY49zzA5IRLMt8yMwY2curgLLpS7Ojm08CgT8oMZH71pY3NgOWEukxJNALkvjYrOV5eF83hf6jwjcbAPHKv2zSi238l5D6wqyl5p5hAnPz2q8PnmrreP7B83INFRjAV/wK3rylXgWujQwAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMS0wNC0yN1QxMjowOTozNCswMzowMLIqlIsAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjEtMDQtMjdUMTI6MDk6MzQrMDM6MDDDdyw3AAAAAElFTkSuQmCC" /></svg></a>
+                        {% endif %}
+                        <p><a name="{{post.id}}">{{ post.text|linebreaksbr }}</a></p>
                     </p>
                         <!-- Лайки -->
                     {% if AddLike%}
@@ -38,22 +43,9 @@
                     {% endif %}
                     <!-- Отображение ссылки на комментарии -->
                     <div class="d-flex justify-content-between align-items-center">
-                        <div class="btn-group">
-                            {% if post.comments.exists %}
-                                <div>
-                                    Комментариев: {{ post.comments.count }}
-                                </div>
-                            {% endif %}
-                        </div>
                         <!-- Дата публикации поста -->
                         <small class="text-muted">{{ post.pub_date }}</small>
                     </div>
-                    <!-- Ссылка на редактирование поста для автора -->
-                    {% if user == post.author %}
-                        <a class="btn btn-sm btn-info" href="{% url 'post_edit' post.author.username post.id %}" role="button">
-                            Редактировать
-                        </a>
-                    {% endif %}
                 </div>
             </div>
 
@@ -61,10 +53,10 @@
         <div class="col-md-3 mb-3 mt-1">
             <div class="media card mb-4">
                 <div class="media-body card-body">
-                    <p><a class="button" href="{% url 'post' post.author.username post.id %}" role="button">
-                        <svg class="_8-yf5 " fill="#262626" height="24" viewBox="0 0 48 48" width="24"><path clip-rule="evenodd" d="M47.5 46.1l-2.8-11c1.8-3.3 2.8-7.1 2.8-11.1C47.5 11 37 .5 24 .5S.5 11 .5 24 11 47.5 24 47.5c4 0 7.8-1 11.1-2.8l11 2.8c.8.2 1.6-.6 1.4-1.4zm-3-22.1c0 4-1 7-2.6 10-.2.4-.3.9-.2 1.4l2.1 8.4-8.3-2.1c-.5-.1-1-.1-1.4.2-1.8 1-5.2 2.6-10 2.6-11.4 0-20.6-9.2-20.6-20.5S12.7 3.5 24 3.5 44.5 12.7 44.5 24z" fill-rule="evenodd"></path></svg>
-                    </a>
-                    </p>
+                        <p><a class="navbar-brand" class="button"
+                              href="{% url 'post' post.author.username post.id %}" role="button">
+                            <svg class="_8-yf5 " fill="#262626" height="24" viewBox="0 0 48 48" width="24"><path clip-rule="evenodd" d="M47.5 46.1l-2.8-11c1.8-3.3 2.8-7.1 2.8-11.1C47.5 11 37 .5 24 .5S.5 11 .5 24 11 47.5 24 47.5c4 0 7.8-1 11.1-2.8l11 2.8c.8.2 1.6-.6 1.4-1.4zm-3-22.1c0 4-1 7-2.6 10-.2.4-.3.9-.2 1.4l2.1 8.4-8.3-2.1c-.5-.1-1-.1-1.4.2-1.8 1-5.2 2.6-10 2.6-11.4 0-20.6-9.2-20.6-20.5S12.7 3.5 24 3.5 44.5 12.7 44.5 24z" fill-rule="evenodd"></path></svg>
+                        </a></p>
                     Комментариев: {{ post.comments.count }}
                                         <!-- Если пост относится к какому-нибудь сообществу, то отобразим ссылку на него через # -->
                     {% if not group_not and post.group %}
