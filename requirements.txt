@@ -24,3 +24,6 @@ zipp==2.2.0               # via importlib-metadata
 django-debug-toolbar~=3.2
 djangorestframework~=3.12.2
 django-filter~=2.4.0
+django-cors-headers~=3.7.0
+djangorestframework-simplejwt~=4.6.0
+drf-spectacular~=0.13.1
