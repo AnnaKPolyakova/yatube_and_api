@@ -23,8 +23,7 @@
                         {{ error }}
                     </div>
                     {% endfor %}
-                <form method="post" enctype="multipart/form-data"
-                    action="
+                <form method="post" enctype="multipart/form-data" action="
                     {% if not post %}
                         {% url 'new_post' %}
                     {% else %}
