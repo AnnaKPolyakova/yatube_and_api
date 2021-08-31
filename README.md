@@ -16,6 +16,9 @@ Django REST Framework
 2) Установить зависимости:
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-3) Запустить проект:
+3) Создать и применить миграции:
+python manage.py makemigrations
+python manage.py migrate
+4) Запустить проект:
 python manage.py runserver
 ```
